@@ -1,24 +1,24 @@
 # NES Emulator Development Tasks
 
-- [/] Project Initialization
+- [x] Project Initialization
     - [x] Create `pom.xml`
     - [x] Create directory structure
     - [x] Initial git commit
-- [/] CPU (6502) Implementation
+- [x] CPU (6502) Implementation
     - [x] Define Registers and Status Flags
     - [x] Implement Memory Bus Interface
-    - [ ] Implement Addressing Modes
-    - [ ] Implement Basic Instructions (LDA, LDX, LDY, STA, STX, STY)
-    - [ ] Implement Arithmetic Instructions (ADC, SBC)
-    - [ ] Implement Logical Instructions (AND, ORA, EOR, BIT)
-    - [ ] Implement Branch/Jump Instructions
-    - [ ] Implement Stack Instructions
-    - [ ] Implement System Instructions (BRK, NOP, etc.)
-    - [ ] CPU Cycle Counting
-- [ ] ROM Loading
-    - [ ] Implement iNES Header Parsing
-    - [ ] Implement ROM Data Loading
-- [ ] Memory Map
-    - [ ] CPU Memory Map (RAM, Mirrors, PPU Registers, APU Registers, Cartridge)
-- [ ] Main Loop & Integration
-    - [ ] Basic Clock/Tick Loop
+    - [x] Implement Addressing Modes
+    - [x] Implement Basic Instructions (LDA, LDX, LDY, STA, STX, STY)
+    - [x] Implement Arithmetic Instructions (ADC, SBC)
+    - [x] Implement Logical Instructions (AND, ORA, EOR, BIT)
+    - [x] Implement Branch/Jump Instructions
+    - [x] Implement Stack Instructions
+    - [x] Implement System Instructions (BRK, NOP, etc.)
+    - [x] CPU Cycle Counting
+- [x] ROM Loading
+    - [x] Implement iNES Header Parsing
+    - [x] Implement ROM Data Loading
+- [x] Memory Map
+    - [x] CPU Memory Map (RAM, Mirrors, PPU Registers, APU Registers, Cartridge)
+- [x] Main Loop & Integration
+    - [x] Basic Clock/Tick Loop
