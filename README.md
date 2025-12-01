@@ -1,6 +1,6 @@
 # NES Emulator
 
-A Nintendo Entertainment System (NES) emulator written in Java, featuring a fully functional MOS 6502 CPU core with cycle-accurate instruction execution.
+A Nintendo Entertainment System (NES) emulator written in Java, featuring a fully functional MOS 6502 CPU core with cycle-accurate instruction execution and **working graphics rendering**!
 
 ## Features
 
@@ -10,6 +10,19 @@ A Nintendo Entertainment System (NES) emulator written in Java, featuring a full
   - 56+ instructions across all categories
   - Cycle-accurate timing
   - Proper status flag handling
+  
+- **PPU (Picture Processing Unit)**
+  - ✅ All 8 PPU registers (PPUCTRL, PPUMASK, PPUSTATUS, etc.)
+  - ✅ Background rendering with tile fetching
+  - ✅ NES 64-color palette
+  - ✅ Scrolling support
+  - ✅ VBlank and NMI generation
+  - ✅ Frame buffer (256x240 pixels)
+  
+- **Display Window**
+  - ✅ Java Swing GUI (768x720, 3x scale)
+  - ✅ 60 FPS rendering
+  - ✅ Real-time graphics display
   
 - **Memory System**
   - 2KB RAM with mirroring
@@ -22,16 +35,16 @@ A Nintendo Entertainment System (NES) emulator written in Java, featuring a full
   - 16KB/32KB PRG-ROM support
   
 - **Comprehensive Testing**
-  - 50+ unit tests
+  - 60+ unit tests
   - Integration tests
   - Real program execution validation
 
 ### 🚧 Future Enhancements
-- PPU (Picture Processing Unit) - Graphics rendering
+- Sprite rendering (characters, enemies)
 - APU (Audio Processing Unit) - Sound synthesis
 - Additional mappers (MMC1, MMC3, etc.)
 - Controller input
-- GUI display
+- Save states
 
 ## Getting Started
 
@@ -50,30 +63,45 @@ mvn clean compile
 mvn test
 
 # Run specific test suite
-mvn test -Dtest=IntegrationTest
+mvn test -Dtest=PpuTest
 ```
 
 ### Running the Emulator
 ```bash
-# Run with dummy ROM (demo program)
+# Run with dummy ROM (test pattern)
 mvn exec:java -Dexec.mainClass="com.nes.Main"
 
 # Run with your own ROM file
 mvn exec:java -Dexec.mainClass="com.nes.Main" -Dexec.args="path/to/game.nes"
 ```
 
+**Example:**
+```bash
+mvn exec:java -Dexec.mainClass="com.nes.Main" -Dexec.args="C:\Users\lin\Downloads\90tank.nes"
+```
+
+## What You'll See
+
+When you run the emulator:
+- A 768x720 window will open
+- **Background graphics will render!** 🎮
+- NES games will display their backgrounds with correct colors
+- The emulator runs at 60 FPS
+
 ## Project Structure
 ```
 my_nes2/
 ├── src/main/java/com/nes/
-│   ├── cpu/Cpu.java           # 6502 CPU implementation
+│   ├── cpu/Cpu.java           # 6502 CPU implementation (~750 lines)
+│   ├── Ppu.java               # PPU with rendering (~500 lines)
 │   ├── Bus.java               # Memory bus and routing
 │   ├── Cartridge.java         # ROM loader
-│   ├── Ppu.java               # PPU stub
+│   ├── EmulatorWindow.java    # GUI display
 │   ├── Apu.java               # APU stub
 │   └── Main.java              # Entry point
 ├── src/test/java/com/nes/
-│   ├── cpu/                   # CPU unit tests
+│   ├── cpu/                   # CPU unit tests (10 suites)
+│   ├── PpuTest.java          # PPU tests
 │   ├── IntegrationTest.java   # Integration tests
 │   ├── CartridgeTest.java
 │   └── MemoryMapTest.java
@@ -122,22 +150,33 @@ my_nes2/
 | `0x4000-0x4017` | APU Registers |
 | `0x8000-0xFFFF` | Cartridge ROM |
 
-## Example Output
-```
-NES Emulator Started
-No ROM provided. Creating dummy cartridge.
-Running...
-Finished 100 cycles.
-Final A: 55
-RAM[0x0200]: 55
-```
+## Current Capabilities
+
+✅ **Fully Working:**
+- CPU executes 6502 machine code
+- PPU renders background tiles from ROMs
+- Display window shows graphics at 60 FPS
+- ROM loading (iNES format, Mapper 0)
+- Correct NES color palette
+- Memory mapping with mirroring
+
+⏳ **Not Yet Implemented:**
+- Sprites (characters, enemies, objects)
+- Sound/Audio (APU)
+- Controller input
+- Additional mappers
 
 ## Development Approach
 This project was developed using **Test-Driven Development (TDD)**:
 - Each feature implemented with corresponding tests
-- Comprehensive test coverage (50+ tests)
+- Comprehensive test coverage (60+ tests)
 - Git commits after each implementation phase
 - Detailed implementation plans in `docs/` folder
+
+## Performance
+- Runs at 60 FPS
+- Cycle-accurate CPU timing
+- Real-time rendering
 
 ## License
 This is an educational project.
@@ -145,4 +184,6 @@ This is an educational project.
 ## Acknowledgments
 - MOS 6502 CPU architecture documentation
 - NES development community
+- NES PPU documentation
 - iNES ROM format specification
+
