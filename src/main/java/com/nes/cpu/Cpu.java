@@ -51,19 +51,109 @@ public class Cpu {
     }
 
     /**
-     * Read a byte from the bus.
+     * Fetches the next byte from memory at the current PC and increments PC.
+     * @return The fetched byte.
      */
-    public byte read(int addr) {
-        return bus.read(addr);
+    public byte fetch() {
+        if (!(bus == null)) {
+            return bus.read(pc++);
+        }
+        return 0x00;
     }
 
-    /**
-     * Write a byte to the bus.
-     */
-    public void write(int addr, byte data) {
-        bus.write(addr, data);
+    // --- Addressing Modes ---
+
+    // Implicit
+    public int IMP() {
+        return 0;
     }
-    
+
+    // Immediate
+    public int IMM() {
+        return pc++;
+    }
+
+    // Zero Page
+    public int ZP0() {
+        return fetch() & 0xFF;
+    }
+
+    // Zero Page, X
+    public int ZPX() {
+        return (fetch() + x) & 0xFF;
+    }
+
+    // Zero Page, Y
+    public int ZPY() {
+        return (fetch() + y) & 0xFF;
+    }
+
+    // Relative
+    public int REL() {
+        int rel = fetch();
+        if ((rel & 0x80) != 0) {
+            rel |= 0xFFFFFF00; // Sign extend
+        }
+        return rel;
+    }
+
+    // Absolute
+    public int ABS() {
+        int lo = fetch() & 0xFF;
+        int hi = fetch() & 0xFF;
+        return (hi << 8) | lo;
+    }
+
+    // Absolute, X
+    public int ABX() {
+        int lo = fetch() & 0xFF;
+        int hi = fetch() & 0xFF;
+        int addr = (hi << 8) | lo;
+        addr += (x & 0xFF);
+        return addr & 0xFFFF;
+    }
+
+    // Absolute, Y
+    public int ABY() {
+        int lo = fetch() & 0xFF;
+        int hi = fetch() & 0xFF;
+        int addr = (hi << 8) | lo;
+        addr += (y & 0xFF);
+        return addr & 0xFFFF;
+    }
+
+    // Indirect
+    public int IND() {
+        int ptrLo = fetch() & 0xFF;
+        int ptrHi = fetch() & 0xFF;
+        int ptr = (ptrHi << 8) | ptrLo;
+
+        // Simulate page boundary bug
+        if (ptrLo == 0xFF) {
+            return (bus.read(ptr & 0xFF00) << 8) | (bus.read(ptr) & 0xFF);
+        } else {
+            return (bus.read(ptr + 1) << 8) | (bus.read(ptr) & 0xFF);
+        }
+    }
+
+    // Indirect, X
+    public int IZX() {
+        int t = (fetch() + x) & 0xFF;
+        int lo = bus.read(t & 0xFF) & 0xFF;
+        int hi = bus.read((t + 1) & 0xFF) & 0xFF;
+        return (hi << 8) | lo;
+    }
+
+    // Indirect, Y
+    public int IZY() {
+        int t = fetch() & 0xFF;
+        int lo = bus.read(t & 0xFF) & 0xFF;
+        int hi = bus.read((t + 1) & 0xFF) & 0xFF;
+        int addr = (hi << 8) | lo;
+        addr += (y & 0xFF);
+        return addr & 0xFFFF;
+    }
+
     // Helper to set flags based on result
     private void setFlag(byte flag, boolean v) {
         if (v) {
@@ -74,6 +164,46 @@ public class Cpu {
     }
 
     public byte getFlag(byte flag) {
-        return (byte) ((status & flag) > 0 ? 1 : 0);
+        return (byte) ((status & flag) != 0 ? 1 : 0);
+    }
+
+    private void setZN(byte result) {
+        setFlag(Z, result == 0);
+        setFlag(N, (result & 0x80) != 0);
+    }
+
+    // --- Instructions ---
+
+    // Load Accumulator
+    public void LDA(int addr) {
+        a = bus.read(addr);
+        setZN(a);
+    }
+
+    // Load X Register
+    public void LDX(int addr) {
+        x = bus.read(addr);
+        setZN(x);
+    }
+
+    // Load Y Register
+    public void LDY(int addr) {
+        y = bus.read(addr);
+        setZN(y);
+    }
+
+    // Store Accumulator
+    public void STA(int addr) {
+        bus.write(addr, a);
+    }
+
+    // Store X Register
+    public void STX(int addr) {
+        bus.write(addr, x);
+    }
+
+    // Store Y Register
+    public void STY(int addr) {
+        bus.write(addr, y);
     }
 }
