@@ -484,4 +484,70 @@ public class Cpu {
         y--;
         setZN(y);
     }
+
+    // --- Shifts & Rotates ---
+
+    // Arithmetic Shift Left
+    public void ASL(int addr) {
+        byte val = bus.read(addr);
+        setFlag(C, (val & 0x80) != 0);
+        val <<= 1;
+        bus.write(addr, val);
+        setZN(val);
+    }
+
+    public void ASL_Acc() {
+        setFlag(C, (a & 0x80) != 0);
+        a <<= 1;
+        setZN(a);
+    }
+
+    // Logical Shift Right
+    public void LSR(int addr) {
+        byte val = bus.read(addr);
+        setFlag(C, (val & 0x01) != 0);
+        val = (byte) ((val & 0xFF) >>> 1);
+        bus.write(addr, val);
+        setZN(val);
+    }
+
+    public void LSR_Acc() {
+        setFlag(C, (a & 0x01) != 0);
+        a = (byte) ((a & 0xFF) >>> 1);
+        setZN(a);
+    }
+
+    // Rotate Left
+    public void ROL(int addr) {
+        byte val = bus.read(addr);
+        int c = getFlag(C);
+        setFlag(C, (val & 0x80) != 0);
+        val = (byte) ((val << 1) | c);
+        bus.write(addr, val);
+        setZN(val);
+    }
+
+    public void ROL_Acc() {
+        int c = getFlag(C);
+        setFlag(C, (a & 0x80) != 0);
+        a = (byte) ((a << 1) | c);
+        setZN(a);
+    }
+
+    // Rotate Right
+    public void ROR(int addr) {
+        byte val = bus.read(addr);
+        int c = getFlag(C);
+        setFlag(C, (val & 0x01) != 0);
+        val = (byte) (((val & 0xFF) >>> 1) | (c << 7));
+        bus.write(addr, val);
+        setZN(val);
+    }
+
+    public void ROR_Acc() {
+        int c = getFlag(C);
+        setFlag(C, (a & 0x01) != 0);
+        a = (byte) (((a & 0xFF) >>> 1) | (c << 7));
+        setZN(a);
+    }
 }
