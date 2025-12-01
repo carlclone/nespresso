@@ -285,4 +285,98 @@ public class Cpu {
         // V flag = bit 6 of M
         setFlag(V, (val & 0x40) != 0);
     }
+
+    // --- Stack Operations ---
+
+    public void push(byte data) {
+        bus.write(0x0100 + (sp & 0xFF), data);
+        sp--;
+    }
+
+    public byte pop() {
+        sp++;
+        return bus.read(0x0100 + (sp & 0xFF));
+    }
+
+    public void pushWord(int data) {
+        push((byte) ((data >> 8) & 0xFF));
+        push((byte) (data & 0xFF));
+    }
+
+    public int popWord() {
+        int lo = pop() & 0xFF;
+        int hi = pop() & 0xFF;
+        return (hi << 8) | lo;
+    }
+
+    // --- Branch Instructions ---
+
+    private void branch(int addr) {
+        // addr is the relative offset (signed byte)
+        // In this emulator structure, the addressing mode (REL) already returns the offset
+        // But wait, REL returns the *offset value*, not the target address?
+        // Let's check REL implementation.
+        // REL reads a byte. If 0x80 is set, it sign extends. It returns the signed int offset.
+        // So 'addr' here is actually the offset.
+        
+        int offset = addr;
+        pc += offset;
+    }
+
+    public void BCC(int offset) {
+        if (getFlag(C) == 0) branch(offset);
+    }
+
+    public void BCS(int offset) {
+        if (getFlag(C) == 1) branch(offset);
+    }
+
+    public void BEQ(int offset) {
+        if (getFlag(Z) == 1) branch(offset);
+    }
+
+    public void BNE(int offset) {
+        if (getFlag(Z) == 0) branch(offset);
+    }
+
+    public void BMI(int offset) {
+        if (getFlag(N) == 1) branch(offset);
+    }
+
+    public void BPL(int offset) {
+        if (getFlag(N) == 0) branch(offset);
+    }
+
+    public void BVC(int offset) {
+        if (getFlag(V) == 0) branch(offset);
+    }
+
+    public void BVS(int offset) {
+        if (getFlag(V) == 1) branch(offset);
+    }
+
+    // --- Jump Instructions ---
+
+    public void JMP(int addr) {
+        pc = addr;
+    }
+
+    public void JSR(int addr) {
+        // Push PC - 1 to stack
+        // PC currently points to next instruction (after JSR opcode and address)
+        // But JSR pushes the address of the last byte of the JSR instruction (PC + 2 - 1 = PC + 1)
+        // Wait, my fetch() increments PC.
+        // JSR is 3 bytes: Opcode, Lo, Hi.
+        // When JSR is executed, Opcode is fetched (PC+1), Lo fetched (PC+2), Hi fetched (PC+3).
+        // PC is now at next instruction.
+        // We need to push PC - 1.
+        
+        pushWord(pc - 1);
+        pc = addr;
+    }
+
+    public void RTS(int addr) { // addr is unused for RTS (Implied)
+        pc = popWord();
+        pc++;
+    }
 }
