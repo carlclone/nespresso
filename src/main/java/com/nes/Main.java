@@ -39,7 +39,7 @@ public class Main {
             bus.insertCartridge(cart);
             cpu.connectBus(bus);
             
-            cpu.reset();
+            bus.reset();
             
             // Run for a few cycles to demonstrate
             System.out.println("Running...");

@@ -16,6 +16,7 @@ public class Cartridge {
     private int mapperId;
     private int prgBanks;
     private int chrBanks;
+    private int mirrorMode; // 0 = Horizontal, 1 = Vertical
 
     public Cartridge(String filePath) throws IOException {
         byte[] data = Files.readAllBytes(Paths.get(filePath));
@@ -33,6 +34,7 @@ public class Cartridge {
         int flags7 = data[7] & 0xFF;
         
         mapperId = ((flags7 & 0xF0) | (flags6 >> 4));
+        mirrorMode = (flags6 & 0x01); // Bit 0: 0 = horizontal, 1 = vertical
 
         // Skip trainer if present (Bit 2 of flags6)
         int offset = 16;
@@ -62,11 +64,13 @@ public class Cartridge {
         this.mapperId = mapperId;
         this.prgBanks = prgRom.length / 16384;
         this.chrBanks = chrRom.length / 8192;
+        this.mirrorMode = 0; // Default to horizontal
     }
 
     public int getPrgBanks() { return prgBanks; }
     public int getChrBanks() { return chrBanks; }
     public int getMapperId() { return mapperId; }
+    public int getMirrorMode() { return mirrorMode; }
 
     /**
      * Read from PRG ROM.
@@ -92,5 +96,31 @@ public class Cartridge {
      */
     public void cpuWrite(int addr, byte data) {
         // Mapper 0: No write support
+    }
+    
+    /**
+     * PPU reads from CHR-ROM/RAM
+     * @param addr Address in PPU space (0x0000 - 0x1FFF)
+     * @return Byte at address
+     */
+    public byte ppuRead(int addr) {
+        addr &= 0x1FFF;
+        if (addr < chrRom.length) {
+            return chrRom[addr];
+        }
+        return 0x00;
+    }
+    
+    /**
+     * PPU writes to CHR-RAM (if CHR-ROM, this does nothing)
+     * @param addr Address in PPU space (0x0000 - 0x1FFF)
+     * @param data Byte to write
+     */
+    public void ppuWrite(int addr, byte data) {
+        addr &= 0x1FFF;
+        // Only write if using CHR-RAM (chrBanks == 0)
+        if (chrBanks == 0 && addr < chrRom.length) {
+            chrRom[addr] = data;
+        }
     }
 }

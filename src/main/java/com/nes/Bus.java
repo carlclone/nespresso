@@ -28,15 +28,28 @@ public class Bus {
     
     public void connectCpu(Cpu cpu) {
         this.cpu = cpu;
+        ppu.connectBus(this);
     }
     
     public void insertCartridge(Cartridge cartridge) {
         this.cartridge = cartridge;
+        ppu.connectCartridge(cartridge);
+    }
+    
+    public void reset() {
+        if (cpu != null) cpu.reset();
+        ppu.reset();
+    }
+    
+    public void nmi() {
+        if (cpu != null) {
+            cpu.nmi();
+        }
     }
     
     public void clock() {
         // PPU runs 3 times faster than CPU
-        // ppu.clock(); 
+        ppu.clock();
         
         // CPU runs once every 3 system ticks
         if (systemClockCounter % 3 == 0) {
@@ -44,8 +57,6 @@ public class Bus {
                 cpu.clock();
             }
         }
-        
-        // apu.clock();
         
         systemClockCounter++;
     }

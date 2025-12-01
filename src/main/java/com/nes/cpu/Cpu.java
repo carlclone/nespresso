@@ -51,6 +51,29 @@ public class Cpu {
     }
 
     /**
+     * Non-Maskable Interrupt (NMI)
+     * Triggered by PPU at VBlank
+     */
+    public void nmi() {
+        // Push PC to stack
+        pushWord(pc);
+        
+        // Push status with B flag clear and U flag set
+        push((byte) ((status & ~B) | U));
+        
+        // Set Interrupt Disable flag
+        setFlag(I, true);
+        
+        // Load NMI vector
+        int lo = bus.read(0xFFFA) & 0xFF;
+        int hi = bus.read(0xFFFB) & 0xFF;
+        pc = (hi << 8) | lo;
+        
+        // NMI takes 7 cycles
+        cycles = 7;
+    }
+
+    /**
      * Fetches the next byte from memory at the current PC and increments PC.
      *
      * @return The fetched byte.
