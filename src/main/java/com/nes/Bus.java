@@ -133,4 +133,8 @@ public class Bus {
     public int[] getFrameBuffer() {
         return ppu.getFrameBuffer();
     }
+    
+    public Ppu getPpu() {
+        return ppu;
+    }
 }
