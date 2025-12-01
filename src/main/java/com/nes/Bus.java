@@ -1,16 +1,23 @@
 package com.nes;
 
+import com.nes.cpu.Cpu;
+
 /**
  * Represents the NES Bus.
  * Connects the CPU, PPU, and other components to memory.
  */
 public class Bus {
+    // Connected CPU
+    private Cpu cpu;
+
     // 64KB RAM
     private final byte[] ram = new byte[64 * 1024];
-
+    
     private Cartridge cartridge;
     private Ppu ppu = new Ppu();
     private Apu apu = new Apu();
+    
+    private long systemClockCounter = 0;
 
     public Bus() {
         // Initialize RAM to 0
@@ -19,8 +26,28 @@ public class Bus {
         }
     }
     
+    public void connectCpu(Cpu cpu) {
+        this.cpu = cpu;
+    }
+    
     public void insertCartridge(Cartridge cartridge) {
         this.cartridge = cartridge;
+    }
+    
+    public void clock() {
+        // PPU runs 3 times faster than CPU
+        // ppu.clock(); 
+        
+        // CPU runs once every 3 system ticks
+        if (systemClockCounter % 3 == 0) {
+            if (cpu != null) {
+                cpu.clock();
+            }
+        }
+        
+        // apu.clock();
+        
+        systemClockCounter++;
     }
 
     /**

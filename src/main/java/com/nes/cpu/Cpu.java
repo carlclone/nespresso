@@ -665,6 +665,19 @@ public class Cpu {
         lookup[0xA1] = new InstructionEntry("LDA", this::LDA, this::IZX, 6);
         lookup[0xB1] = new InstructionEntry("LDA", this::LDA, this::IZY, 5); // +1 if page crossed
 
+        // STA
+        lookup[0x85] = new InstructionEntry("STA", this::STA, this::ZP0, 3);
+        lookup[0x95] = new InstructionEntry("STA", this::STA, this::ZPX, 4);
+        lookup[0x8D] = new InstructionEntry("STA", this::STA, this::ABS, 4);
+        lookup[0x9D] = new InstructionEntry("STA", this::STA, this::ABX, 5);
+        lookup[0x99] = new InstructionEntry("STA", this::STA, this::ABY, 5);
+        lookup[0x81] = new InstructionEntry("STA", this::STA, this::IZX, 6);
+        lookup[0x91] = new InstructionEntry("STA", this::STA, this::IZY, 6);
+
+        // JMP
+        lookup[0x4C] = new InstructionEntry("JMP", this::JMP, this::ABS, 3);
+        lookup[0x6C] = new InstructionEntry("JMP", this::JMP, this::IND, 5);
+
         // BRK
         lookup[0x00] = new InstructionEntry("BRK", this::BRK, this::IMP, 7);
     }
