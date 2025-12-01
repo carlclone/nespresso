@@ -52,6 +52,7 @@ public class Cpu {
 
     /**
      * Fetches the next byte from memory at the current PC and increments PC.
+     *
      * @return The fetched byte.
      */
     public byte fetch() {
@@ -213,17 +214,17 @@ public class Cpu {
         int val = fetched & 0xFF;
         int aVal = a & 0xFF;
         int cVal = getFlag(C);
-        
+
         int sum = aVal + val + cVal;
-        
+
         setFlag(C, sum > 255);
         setFlag(Z, (sum & 0xFF) == 0);
         setFlag(N, (sum & 0x80) != 0);
-        
+
         // Overflow: ~(A ^ M) & (A ^ R) & 0x80
         boolean overflow = (~(aVal ^ val) & (aVal ^ sum) & 0x80) != 0;
         setFlag(V, overflow);
-        
+
         a = (byte) sum;
     }
 
@@ -233,17 +234,17 @@ public class Cpu {
         int val = (fetched ^ 0xFF) & 0xFF; // Invert bits
         int aVal = a & 0xFF;
         int cVal = getFlag(C);
-        
+
         int sum = aVal + val + cVal;
-        
+
         setFlag(C, sum > 255);
         setFlag(Z, (sum & 0xFF) == 0);
         setFlag(N, (sum & 0x80) != 0);
-        
+
         // Overflow logic is same as ADC but with inverted M
         boolean overflow = (~(aVal ^ val) & (aVal ^ sum) & 0x80) != 0;
         setFlag(V, overflow);
-        
+
         a = (byte) sum;
     }
 
@@ -275,13 +276,13 @@ public class Cpu {
         byte fetched = bus.read(addr);
         int val = fetched & 0xFF;
         int aVal = a & 0xFF;
-        
+
         // Z flag set if (A & M) == 0
         setFlag(Z, (aVal & val) == 0);
-        
+
         // N flag = bit 7 of M
         setFlag(N, (val & 0x80) != 0);
-        
+
         // V flag = bit 6 of M
         setFlag(V, (val & 0x40) != 0);
     }
@@ -318,7 +319,7 @@ public class Cpu {
         // Let's check REL implementation.
         // REL reads a byte. If 0x80 is set, it sign extends. It returns the signed int offset.
         // So 'addr' here is actually the offset.
-        
+
         int offset = addr;
         pc += offset;
     }
@@ -370,7 +371,7 @@ public class Cpu {
         // When JSR is executed, Opcode is fetched (PC+1), Lo fetched (PC+2), Hi fetched (PC+3).
         // PC is now at next instruction.
         // We need to push PC - 1.
-        
+
         pushWord(pc - 1);
         pc = addr;
     }
@@ -406,7 +407,7 @@ public class Cpu {
         // When pulling, we overwrite flags. B flag in register is not affected by PLP?
         // According to docs: "The B flag is not set or cleared by PLP."
         // Also U bit is always 1.
-        
+
         byte fetched = pop();
         status = (byte) ((fetched & ~B) | U); // Ensure U is set, B is ignored (or cleared?)
         // Wait, B flag doesn't exist in the status register physically. It only exists on stack.
@@ -564,13 +565,13 @@ public class Cpu {
         // My fetch() increments PC. So PC is currently at BRK+1.
         // We need to push PC+1 (which is BRK+2).
         pushWord(pc + 1);
-        
+
         // Push Status with B and U set
         push((byte) (status | B | U));
-        
+
         // Set Interrupt Disable
         setFlag(I, true);
-        
+
         // Load IRQ Vector
         int lo = bus.read(0xFFFE) & 0xFF;
         int hi = bus.read(0xFFFF) & 0xFF;
@@ -581,18 +582,105 @@ public class Cpu {
         // Pull Status
         byte fetched = pop();
         status = (byte) ((fetched & ~B) | U); // Ignore B, set U
-        
+
         // Pull PC
         pc = popWord();
     }
 
     // --- Flag Instructions ---
 
-    public void CLC(int addr) { setFlag(C, false); }
-    public void SEC(int addr) { setFlag(C, true); }
-    public void CLI(int addr) { setFlag(I, false); }
-    public void SEI(int addr) { setFlag(I, true); }
-    public void CLV(int addr) { setFlag(V, false); }
-    public void CLD(int addr) { setFlag(D, false); }
-    public void SED(int addr) { setFlag(D, true); }
+    public void CLC(int addr) {
+        setFlag(C, false);
+    }
+
+    public void SEC(int addr) {
+        setFlag(C, true);
+    }
+
+    public void CLI(int addr) {
+        setFlag(I, false);
+    }
+
+    public void SEI(int addr) {
+        setFlag(I, true);
+    }
+
+    public void CLV(int addr) {
+        setFlag(V, false);
+    }
+
+    public void CLD(int addr) {
+        setFlag(D, false);
+    }
+
+    public void SED(int addr) {
+        setFlag(D, true);
+    }
+
+    // --- Dispatch & Cycle Counting ---
+
+    public int cycles = 0;
+    public int opcode = 0;
+
+    @FunctionalInterface
+    interface Instruction {
+        void execute(int addr);
+    }
+
+    @FunctionalInterface
+    interface AddressingMode {
+        int getAddress();
+    }
+
+    class InstructionEntry {
+        String name;
+        Instruction operation;
+        AddressingMode mode;
+        int cycles;
+
+        public InstructionEntry(String name, Instruction operation, AddressingMode mode, int cycles) {
+            this.name = name;
+            this.operation = operation;
+            this.mode = mode;
+            this.cycles = cycles;
+        }
+    }
+
+    private InstructionEntry[] lookup = new InstructionEntry[256];
+
+    public Cpu() {
+        // Initialize lookup table
+        for (int i = 0; i < 256; i++) {
+            lookup[i] = new InstructionEntry("XXX", this::NOP, this::IMP, 2);
+        }
+
+        // Populate table (Partial list for now, will fill all)
+        // LDA
+        lookup[0xA9] = new InstructionEntry("LDA", this::LDA, this::IMM, 2);
+        lookup[0xA5] = new InstructionEntry("LDA", this::LDA, this::ZP0, 3);
+        lookup[0xB5] = new InstructionEntry("LDA", this::LDA, this::ZPX, 4);
+        lookup[0xAD] = new InstructionEntry("LDA", this::LDA, this::ABS, 4);
+        lookup[0xBD] = new InstructionEntry("LDA", this::LDA, this::ABX, 4); // +1 if page crossed
+        lookup[0xB9] = new InstructionEntry("LDA", this::LDA, this::ABY, 4); // +1 if page crossed
+        lookup[0xA1] = new InstructionEntry("LDA", this::LDA, this::IZX, 6);
+        lookup[0xB1] = new InstructionEntry("LDA", this::LDA, this::IZY, 5); // +1 if page crossed
+
+        // BRK
+        lookup[0x00] = new InstructionEntry("BRK", this::BRK, this::IMP, 7);
+    }
+
+    public void clock() {
+        if (cycles == 0) {
+            opcode = bus.read(pc) & 0xFF; // Read opcode
+            pc++;
+
+            InstructionEntry entry = lookup[opcode];
+
+            cycles = entry.cycles;
+
+            int addr = entry.mode.getAddress();
+            entry.operation.execute(addr);
+        }
+        cycles--;
+    }
 }
