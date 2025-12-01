@@ -1,0 +1,24 @@
+# NES Emulator Development Tasks
+
+- [/] Project Initialization
+    - [x] Create `pom.xml`
+    - [x] Create directory structure
+    - [x] Initial git commit
+- [/] CPU (6502) Implementation
+    - [x] Define Registers and Status Flags
+    - [x] Implement Memory Bus Interface
+    - [ ] Implement Addressing Modes
+    - [ ] Implement Basic Instructions (LDA, LDX, LDY, STA, STX, STY)
+    - [ ] Implement Arithmetic Instructions (ADC, SBC)
+    - [ ] Implement Logical Instructions (AND, ORA, EOR, BIT)
+    - [ ] Implement Branch/Jump Instructions
+    - [ ] Implement Stack Instructions
+    - [ ] Implement System Instructions (BRK, NOP, etc.)
+    - [ ] CPU Cycle Counting
+- [ ] ROM Loading
+    - [ ] Implement iNES Header Parsing
+    - [ ] Implement ROM Data Loading
+- [ ] Memory Map
+    - [ ] CPU Memory Map (RAM, Mirrors, PPU Registers, APU Registers, Cartridge)
+- [ ] Main Loop & Integration
+    - [ ] Basic Clock/Tick Loop
