@@ -700,6 +700,12 @@ public class Ppu {
         }
     }
     
+    // Debug Getters
+    public byte getPpuCtrl() { return ppuCtrl; }
+    public byte getPpuMask() { return ppuMask; }
+    public byte getPpuStatus() { return ppuStatus; }
+    public int getOamAddr() { return oamAddr & 0xFF; }
+    
     // Getters for debugging
     public int getScanline() { return scanline; }
     public int getCycle() { return cycle; }

@@ -511,6 +511,34 @@ public class Cpu {
 
     // --- Shifts & Rotates ---
 
+    // --- Compares ---
+
+    public void CMP(int addr) {
+        byte val = bus.read(addr);
+        int result = (a & 0xFF) - (val & 0xFF);
+        setFlag(C, (a & 0xFF) >= (val & 0xFF));
+        setFlag(Z, (result & 0xFF) == 0);
+        setFlag(N, (result & 0x80) != 0);
+    }
+
+    public void CPX(int addr) {
+        byte val = bus.read(addr);
+        int result = (x & 0xFF) - (val & 0xFF);
+        setFlag(C, (x & 0xFF) >= (val & 0xFF));
+        setFlag(Z, (result & 0xFF) == 0);
+        setFlag(N, (result & 0x80) != 0);
+    }
+
+    public void CPY(int addr) {
+        byte val = bus.read(addr);
+        int result = (y & 0xFF) - (val & 0xFF);
+        setFlag(C, (y & 0xFF) >= (val & 0xFF));
+        setFlag(Z, (result & 0xFF) == 0);
+        setFlag(N, (result & 0x80) != 0);
+    }
+
+    // --- Shifts & Rotates ---
+
     // Arithmetic Shift Left
     public void ASL(int addr) {
         byte val = bus.read(addr);
@@ -520,7 +548,7 @@ public class Cpu {
         setZN(val);
     }
 
-    public void ASL_Acc() {
+    public void ASL_Acc(int addr) {
         setFlag(C, (a & 0x80) != 0);
         a <<= 1;
         setZN(a);
@@ -535,7 +563,7 @@ public class Cpu {
         setZN(val);
     }
 
-    public void LSR_Acc() {
+    public void LSR_Acc(int addr) {
         setFlag(C, (a & 0x01) != 0);
         a = (byte) ((a & 0xFF) >>> 1);
         setZN(a);
@@ -551,7 +579,7 @@ public class Cpu {
         setZN(val);
     }
 
-    public void ROL_Acc() {
+    public void ROL_Acc(int addr) {
         int c = getFlag(C);
         setFlag(C, (a & 0x80) != 0);
         a = (byte) ((a << 1) | c);
@@ -568,7 +596,7 @@ public class Cpu {
         setZN(val);
     }
 
-    public void ROR_Acc() {
+    public void ROR_Acc(int addr) {
         int c = getFlag(C);
         setFlag(C, (a & 0x01) != 0);
         a = (byte) (((a & 0xFF) >>> 1) | (c << 7));
@@ -733,6 +761,149 @@ public class Cpu {
 
         // BRK
         lookup[0x00] = new InstructionEntry("BRK", this::BRK, this::IMP, 7);
+        
+        // BIT
+        lookup[0x24] = new InstructionEntry("BIT", this::BIT, this::ZP0, 3);
+        lookup[0x2C] = new InstructionEntry("BIT", this::BIT, this::ABS, 4);
+        
+        // LDX
+        lookup[0xA2] = new InstructionEntry("LDX", this::LDX, this::IMM, 2);
+        lookup[0xA6] = new InstructionEntry("LDX", this::LDX, this::ZP0, 3);
+        lookup[0xB6] = new InstructionEntry("LDX", this::LDX, this::ZPY, 4);
+        lookup[0xAE] = new InstructionEntry("LDX", this::LDX, this::ABS, 4);
+        lookup[0xBE] = new InstructionEntry("LDX", this::LDX, this::ABY, 4); // +1 if page crossed
+        
+        // LDY
+        lookup[0xA0] = new InstructionEntry("LDY", this::LDY, this::IMM, 2);
+        lookup[0xA4] = new InstructionEntry("LDY", this::LDY, this::ZP0, 3);
+        lookup[0xB4] = new InstructionEntry("LDY", this::LDY, this::ZPX, 4);
+        lookup[0xAC] = new InstructionEntry("LDY", this::LDY, this::ABS, 4);
+        lookup[0xBC] = new InstructionEntry("LDY", this::LDY, this::ABX, 4); // +1 if page crossed
+        
+        // STX
+        lookup[0x86] = new InstructionEntry("STX", this::STX, this::ZP0, 3);
+        lookup[0x96] = new InstructionEntry("STX", this::STX, this::ZPY, 4);
+        lookup[0x8E] = new InstructionEntry("STX", this::STX, this::ABS, 4);
+        
+        // STY
+        lookup[0x84] = new InstructionEntry("STY", this::STY, this::ZP0, 3);
+        lookup[0x94] = new InstructionEntry("STY", this::STY, this::ZPX, 4);
+        lookup[0x8C] = new InstructionEntry("STY", this::STY, this::ABS, 4);
+        
+        // Register Transfers
+        lookup[0xAA] = new InstructionEntry("TAX", this::TAX, this::IMP, 2);
+        lookup[0xA8] = new InstructionEntry("TAY", this::TAY, this::IMP, 2);
+        lookup[0x8A] = new InstructionEntry("TXA", this::TXA, this::IMP, 2);
+        lookup[0x98] = new InstructionEntry("TYA", this::TYA, this::IMP, 2);
+        lookup[0x9A] = new InstructionEntry("TXS", this::TXS, this::IMP, 2);
+        lookup[0xBA] = new InstructionEntry("TSX", this::TSX, this::IMP, 2);
+        
+        // Stack Operations
+        lookup[0x48] = new InstructionEntry("PHA", this::PHA, this::IMP, 3);
+        lookup[0x68] = new InstructionEntry("PLA", this::PLA, this::IMP, 4);
+        lookup[0x08] = new InstructionEntry("PHP", this::PHP, this::IMP, 3);
+        lookup[0x28] = new InstructionEntry("PLP", this::PLP, this::IMP, 4);
+        
+        // Subroutines / Interrupts
+        lookup[0x20] = new InstructionEntry("JSR", this::JSR, this::ABS, 6);
+        lookup[0x60] = new InstructionEntry("RTS", this::RTS, this::IMP, 6);
+        lookup[0x40] = new InstructionEntry("RTI", this::RTI, this::IMP, 6);
+        
+        // Logical
+        lookup[0x29] = new InstructionEntry("AND", this::AND, this::IMM, 2);
+        lookup[0x25] = new InstructionEntry("AND", this::AND, this::ZP0, 3);
+        lookup[0x35] = new InstructionEntry("AND", this::AND, this::ZPX, 4);
+        lookup[0x2D] = new InstructionEntry("AND", this::AND, this::ABS, 4);
+        lookup[0x3D] = new InstructionEntry("AND", this::AND, this::ABX, 4);
+        lookup[0x39] = new InstructionEntry("AND", this::AND, this::ABY, 4);
+        lookup[0x21] = new InstructionEntry("AND", this::AND, this::IZX, 6);
+        lookup[0x31] = new InstructionEntry("AND", this::AND, this::IZY, 5);
+        
+        lookup[0x09] = new InstructionEntry("ORA", this::ORA, this::IMM, 2);
+        lookup[0x05] = new InstructionEntry("ORA", this::ORA, this::ZP0, 3);
+        lookup[0x15] = new InstructionEntry("ORA", this::ORA, this::ZPX, 4);
+        lookup[0x0D] = new InstructionEntry("ORA", this::ORA, this::ABS, 4);
+        lookup[0x1D] = new InstructionEntry("ORA", this::ORA, this::ABX, 4);
+        lookup[0x19] = new InstructionEntry("ORA", this::ORA, this::ABY, 4);
+        lookup[0x01] = new InstructionEntry("ORA", this::ORA, this::IZX, 6);
+        lookup[0x11] = new InstructionEntry("ORA", this::ORA, this::IZY, 5);
+        
+        lookup[0x49] = new InstructionEntry("EOR", this::EOR, this::IMM, 2);
+        lookup[0x45] = new InstructionEntry("EOR", this::EOR, this::ZP0, 3);
+        lookup[0x55] = new InstructionEntry("EOR", this::EOR, this::ZPX, 4);
+        lookup[0x4D] = new InstructionEntry("EOR", this::EOR, this::ABS, 4);
+        lookup[0x5D] = new InstructionEntry("EOR", this::EOR, this::ABX, 4);
+        lookup[0x59] = new InstructionEntry("EOR", this::EOR, this::ABY, 4);
+        lookup[0x41] = new InstructionEntry("EOR", this::EOR, this::IZX, 6);
+        lookup[0x51] = new InstructionEntry("EOR", this::EOR, this::IZY, 5);
+        
+        // Compares
+        lookup[0xC9] = new InstructionEntry("CMP", this::CMP, this::IMM, 2);
+        lookup[0xC5] = new InstructionEntry("CMP", this::CMP, this::ZP0, 3);
+        lookup[0xD5] = new InstructionEntry("CMP", this::CMP, this::ZPX, 4);
+        lookup[0xCD] = new InstructionEntry("CMP", this::CMP, this::ABS, 4);
+        lookup[0xDD] = new InstructionEntry("CMP", this::CMP, this::ABX, 4);
+        lookup[0xD9] = new InstructionEntry("CMP", this::CMP, this::ABY, 4);
+        lookup[0xC1] = new InstructionEntry("CMP", this::CMP, this::IZX, 6);
+        lookup[0xD1] = new InstructionEntry("CMP", this::CMP, this::IZY, 5);
+        
+        lookup[0xE0] = new InstructionEntry("CPX", this::CPX, this::IMM, 2);
+        lookup[0xE4] = new InstructionEntry("CPX", this::CPX, this::ZP0, 3);
+        lookup[0xEC] = new InstructionEntry("CPX", this::CPX, this::ABS, 4);
+        
+        lookup[0xC0] = new InstructionEntry("CPY", this::CPY, this::IMM, 2);
+        lookup[0xC4] = new InstructionEntry("CPY", this::CPY, this::ZP0, 3);
+        lookup[0xCC] = new InstructionEntry("CPY", this::CPY, this::ABS, 4);
+        
+        // Increments / Decrements
+        lookup[0xE6] = new InstructionEntry("INC", this::INC, this::ZP0, 5);
+        lookup[0xF6] = new InstructionEntry("INC", this::INC, this::ZPX, 6);
+        lookup[0xEE] = new InstructionEntry("INC", this::INC, this::ABS, 6);
+        lookup[0xFE] = new InstructionEntry("INC", this::INC, this::ABX, 7);
+        
+        lookup[0xC6] = new InstructionEntry("DEC", this::DEC, this::ZP0, 5);
+        lookup[0xD6] = new InstructionEntry("DEC", this::DEC, this::ZPX, 6);
+        lookup[0xCE] = new InstructionEntry("DEC", this::DEC, this::ABS, 6);
+        lookup[0xDE] = new InstructionEntry("DEC", this::DEC, this::ABX, 7);
+        
+        lookup[0xE8] = new InstructionEntry("INX", this::INX, this::IMP, 2);
+        lookup[0xC8] = new InstructionEntry("INY", this::INY, this::IMP, 2);
+        lookup[0xCA] = new InstructionEntry("DEX", this::DEX, this::IMP, 2);
+        lookup[0x88] = new InstructionEntry("DEY", this::DEY, this::IMP, 2);
+        
+        // Shifts
+        lookup[0x0A] = new InstructionEntry("ASL", this::ASL_Acc, this::IMP, 2);
+        lookup[0x06] = new InstructionEntry("ASL", this::ASL, this::ZP0, 5);
+        lookup[0x16] = new InstructionEntry("ASL", this::ASL, this::ZPX, 6);
+        lookup[0x0E] = new InstructionEntry("ASL", this::ASL, this::ABS, 6);
+        lookup[0x1E] = new InstructionEntry("ASL", this::ASL, this::ABX, 7);
+        
+        lookup[0x4A] = new InstructionEntry("LSR", this::LSR_Acc, this::IMP, 2);
+        lookup[0x46] = new InstructionEntry("LSR", this::LSR, this::ZP0, 5);
+        lookup[0x56] = new InstructionEntry("LSR", this::LSR, this::ZPX, 6);
+        lookup[0x4E] = new InstructionEntry("LSR", this::LSR, this::ABS, 6);
+        lookup[0x5E] = new InstructionEntry("LSR", this::LSR, this::ABX, 7);
+        
+        lookup[0x2A] = new InstructionEntry("ROL", this::ROL_Acc, this::IMP, 2);
+        lookup[0x26] = new InstructionEntry("ROL", this::ROL, this::ZP0, 5);
+        lookup[0x36] = new InstructionEntry("ROL", this::ROL, this::ZPX, 6);
+        lookup[0x2E] = new InstructionEntry("ROL", this::ROL, this::ABS, 6);
+        lookup[0x3E] = new InstructionEntry("ROL", this::ROL, this::ABX, 7);
+        
+        lookup[0x6A] = new InstructionEntry("ROR", this::ROR_Acc, this::IMP, 2);
+        lookup[0x66] = new InstructionEntry("ROR", this::ROR, this::ZP0, 5);
+        lookup[0x76] = new InstructionEntry("ROR", this::ROR, this::ZPX, 6);
+        lookup[0x6E] = new InstructionEntry("ROR", this::ROR, this::ABS, 6);
+        lookup[0x7E] = new InstructionEntry("ROR", this::ROR, this::ABX, 7);
+        
+        // Flags
+        lookup[0x18] = new InstructionEntry("CLC", this::CLC, this::IMP, 2);
+        lookup[0x38] = new InstructionEntry("SEC", this::SEC, this::IMP, 2);
+        lookup[0x58] = new InstructionEntry("CLI", this::CLI, this::IMP, 2);
+        lookup[0x78] = new InstructionEntry("SEI", this::SEI, this::IMP, 2);
+        lookup[0xB8] = new InstructionEntry("CLV", this::CLV, this::IMP, 2);
+        lookup[0xD8] = new InstructionEntry("CLD", this::CLD, this::IMP, 2);
+        lookup[0xF8] = new InstructionEntry("SED", this::SED, this::IMP, 2);
     }
 
     public void clock() {
