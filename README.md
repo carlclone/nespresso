@@ -14,6 +14,8 @@ A Nintendo Entertainment System (NES) emulator written in Java, featuring a full
 - **PPU (Picture Processing Unit)**
   -  All 8 PPU registers (PPUCTRL, PPUMASK, PPUSTATUS, etc.)
   -  Background rendering with tile fetching
+  -  **Sprite rendering (8x8, flipping, priority)**
+  -  **Sprite 0 Hit detection**
   -  NES 64-color palette
   -  Scrolling support
   -  VBlank and NMI generation
@@ -40,7 +42,6 @@ A Nintendo Entertainment System (NES) emulator written in Java, featuring a full
   - Real program execution validation
 
 ### 🚧 Future Enhancements
-- Sprite rendering (characters, enemies)
 - APU (Audio Processing Unit) - Sound synthesis
 - Additional mappers (MMC1, MMC3, etc.)
 - Controller input
@@ -84,8 +85,8 @@ mvn exec:java -Dexec.mainClass="com.nes.Main" -Dexec.args="C:\Users\lin\Download
 
 When you run the emulator:
 - A 768x720 window will open
-- **Background graphics will render!** 🎮
-- NES games will display their backgrounds with correct colors
+- **Background and Sprite graphics will render!** 🎮
+- NES games will display their backgrounds and characters with correct colors
 - The emulator runs at 60 FPS
 
 ## Project Structure
@@ -141,6 +142,9 @@ my_nes2/
 ### System
 `BRK`, `NOP`, `RTI`, `CLC`, `SEC`, `CLI`, `SEI`, `CLV`, `CLD`, `SED`
 
+### Compares
+`CMP`, `CPX`, `CPY`
+
 ## Memory Map
 
 | Address Range | Description |
@@ -154,14 +158,13 @@ my_nes2/
 
 ✅ **Fully Working:**
 - CPU executes 6502 machine code
-- PPU renders background tiles from ROMs
+- PPU renders background tiles and **sprites** from ROMs
 - Display window shows graphics at 60 FPS
 - ROM loading (iNES format, Mapper 0)
 - Correct NES color palette
 - Memory mapping with mirroring
 
 ⏳ **Not Yet Implemented:**
-- Sprites (characters, enemies, objects)
 - Sound/Audio (APU)
 - Controller input
 - Additional mappers
