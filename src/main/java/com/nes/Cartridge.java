@@ -58,13 +58,18 @@ public class Cartridge {
     }
 
     // For testing
-    public Cartridge(byte[] prgRom, byte[] chrRom, int mapperId) {
+    public Cartridge(byte[] prgRom, byte[] chrRom, int mapperId, int mirrorMode) {
         this.prgRom = prgRom;
         this.chrRom = chrRom;
         this.mapperId = mapperId;
         this.prgBanks = prgRom.length / 16384;
         this.chrBanks = chrRom.length / 8192;
-        this.mirrorMode = 0; // Default to horizontal
+        this.mirrorMode = mirrorMode;
+    }
+
+    // Legacy test constructor (defaults to Horizontal)
+    public Cartridge(byte[] prgRom, byte[] chrRom, int mapperId) {
+        this(prgRom, chrRom, mapperId, 0);
     }
 
     public int getPrgBanks() { return prgBanks; }

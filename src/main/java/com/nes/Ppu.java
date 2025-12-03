@@ -266,7 +266,10 @@ public class Ppu {
     /**
      * PPU reads from its own address space
      */
-    private byte ppuRead(int addr) {
+    /**
+     * PPU reads from its own address space
+     */
+    byte ppuRead(int addr) {
         addr &= 0x3FFF;
         
         // Pattern tables (0x0000-0x1FFF) - CHR-ROM/RAM
@@ -284,10 +287,17 @@ public class Ppu {
             if (cartridge != null) {
                 int mirrorMode = cartridge.getMirrorMode();
                 if (mirrorMode == 0) { // Horizontal
-                    if (addr >= 0x0400 && addr < 0x0800) addr -= 0x0400;
-                    if (addr >= 0x0C00) addr -= 0x0400;
+                    // NT0 (0x000) & NT1 (0x400) -> VRAM A (0x000)
+                    // NT2 (0x800) & NT3 (0xC00) -> VRAM B (0x400)
+                    if ((addr & 0x0800) != 0) {
+                        addr = 0x0400 | (addr & 0x03FF);
+                    } else {
+                        addr = addr & 0x03FF;
+                    }
                 } else if (mirrorMode == 1) { // Vertical
-                    if (addr >= 0x0800) addr -= 0x0800;
+                    // NT0 (0x000) & NT2 (0x800) -> VRAM A (0x000)
+                    // NT1 (0x400) & NT3 (0xC00) -> VRAM B (0x400)
+                    addr = addr & 0x07FF;
                 }
             }
             
@@ -310,7 +320,7 @@ public class Ppu {
     /**
      * PPU writes to its own address space
      */
-    private void ppuWrite(int addr, byte data) {
+    void ppuWrite(int addr, byte data) {
         addr &= 0x3FFF;
         
         // Pattern tables (0x0000-0x1FFF) - CHR-ROM/RAM
@@ -327,10 +337,13 @@ public class Ppu {
             if (cartridge != null) {
                 int mirrorMode = cartridge.getMirrorMode();
                 if (mirrorMode == 0) { // Horizontal
-                    if (addr >= 0x0400 && addr < 0x0800) addr -= 0x0400;
-                    if (addr >= 0x0C00) addr -= 0x0400;
+                    if ((addr & 0x0800) != 0) {
+                        addr = 0x0400 | (addr & 0x03FF);
+                    } else {
+                        addr = addr & 0x03FF;
+                    }
                 } else if (mirrorMode == 1) { // Vertical
-                    if (addr >= 0x0800) addr -= 0x0800;
+                    addr = addr & 0x07FF;
                 }
             }
             
