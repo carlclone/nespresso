@@ -60,6 +60,11 @@ public class Main {
                     // Render the frame immediately after emulation
                     window.renderFrame();
                     
+                    // Debug Alignment
+                    if (bus.getPpu().getFrame() % 60 == 0) {
+                        System.out.println("End of Frame Loop: Scanline=" + bus.getPpu().getScanline() + ", Cycle=" + bus.getPpu().getCycle());
+                    }
+                    
                     // Debug Output every 60 frames
                     if (bus.getPpu().getFrame() % 60 == 0) {
                         Ppu ppu = bus.getPpu();
