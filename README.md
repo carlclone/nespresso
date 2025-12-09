@@ -74,15 +74,15 @@ mvn test -Dtest=PpuTest
 ### Running the Emulator
 ```bash
 # Run with dummy ROM (test pattern)
-mvn exec:java -Dexec.mainClass="com.nes.Main"
+mvn -q exec:java -Dexec.mainClass=com.nes.Main
 
 # Run with your own ROM file
-mvn exec:java -Dexec.mainClass="com.nes.Main" -Dexec.args="path/to/game.nes"
+mvn -q exec:java -Dexec.mainClass=com.nes.Main -Dexec.args="path/to/game.nes"
 ```
 
 **Example:**
 ```bash
-mvn exec:java -Dexec.mainClass="com.nes.Main" -Dexec.args="C:\Users\lin\Downloads\90tank.nes"
+mvn -q exec:java -Dexec.mainClass=com.nes.Main -Dexec.args="C:\Users\lin\Downloads\90tank.nes"
 ```
 
 ## Controls
