@@ -558,4 +558,80 @@ public class PpuTest {
             assertEquals((byte) (0xFF - i), data, "OAM byte " + i + " should match RAM");
         }
     }
+
+    @Test
+    public void testNMITiming() {
+        // Setup CPU
+        com.nes.cpu.Cpu cpu = new com.nes.cpu.Cpu();
+        cpu.connectBus(bus);
+        bus.connectCpu(cpu);
+        
+        ppu.reset();
+        cpu.reset();
+        
+        // Set NMI Vector (0xFFFA/B) to 0x1234
+        // We need to write to RAM/ROM. Since we have a cartridge, writes to 0xFFFA might be ignored 
+        // if it's ROM. But our Cartridge class doesn't support writing to PRG ROM.
+        // However, Bus.read() falls back to RAM if no cartridge, OR if address is in RAM.
+        // But 0xFFFA is in ROM space.
+        // We need a way to set the NMI vector.
+        // Let's use a custom Cartridge or just write to the bus and hope it falls back?
+        // Bus.write(0xFFFA) -> Cartridge.cpuWrite().
+        // Cartridge.cpuWrite() does nothing for Mapper 0.
+        
+        // Workaround: Use reflection to set RAM in Bus or mock Cartridge?
+        // Easier: Create a Cartridge with the vector already set.
+        byte[] prg = new byte[16384];
+        // Set NMI vector at end of PRG (offset 0x3FFA for 16KB PRG mapped at 0xC000)
+        // 16KB PRG is mapped to 0x8000-0xBFFF and mirrored to 0xC000-0xFFFF.
+        // So 0xFFFA is at offset 0x3FFA in the 16KB array.
+        prg[0x3FFA] = (byte) 0x34; // Lo
+        prg[0x3FFB] = (byte) 0x12; // Hi
+        
+        byte[] chr = new byte[8192];
+        Cartridge nmiCart = new Cartridge(prg, chr, 0);
+        bus.insertCartridge(nmiCart);
+        ppu.reset();
+        cpu.reset(); // Reset to load start vector (which is also in PRG, but we don't care about start vector here)
+        
+        // Enable NMI in PPU
+        ppu.cpuWrite(0x2000, (byte) 0x88); // Bit 7 = 1 (NMI Enable), Bit 3 = 1 (Bg addr)
+        
+        // Write infinite loop at 0x1234 so CPU stays there
+        // 0x1234 is in RAM (0x0000-0x1FFF)
+        bus.write(0x1234, (byte) 0x4C); // JMP
+        bus.write(0x1235, (byte) 0x34); // Lo
+        bus.write(0x1236, (byte) 0x12); // Hi
+        
+        // Run PPU to VBlank
+        // VBlank at Scanline 241, Cycle 1.
+        // Total cycles to run: 241 * 341 + 1
+        int cyclesToRun = 241 * 341 + 1;
+        
+        for (int i = 0; i < cyclesToRun; i++) {
+            bus.clock(); // Clock the whole system
+        }
+        
+        // Check if CPU PC is 0x1234
+        // CPU clock runs every 3 PPU clocks.
+        // NMI takes 7 CPU cycles to process.
+        // We need to run enough cycles for CPU to pick it up.
+        // After PPU triggers NMI, CPU needs to finish current instruction and then process interrupt.
+        // Since we are just idling (executing 0x00 BRK or whatever is in PRG), it might take a few cycles.
+        
+        // Let's run a bit more to ensure CPU processes it.
+        for (int i = 0; i < 100; i++) {
+            bus.clock();
+        }
+        
+        // Debug checks
+        // 1. Check if VBlank flag is set
+        assertEquals(1, (ppu.cpuRead(0x2002) & 0x80) >> 7, "VBlank flag should be set");
+        
+        // 2. Check if NMI vector is readable
+        assertEquals((byte)0x34, bus.read(0xFFFA), "Bus should read NMI vector Lo");
+        assertEquals((byte)0x12, bus.read(0xFFFB), "Bus should read NMI vector Hi");
+        
+        assertEquals(0x1234, cpu.pc, "CPU should jump to NMI vector 0x1234");
+    }
 }

@@ -47,4 +47,41 @@ public class CartridgeTest {
         
         Files.delete(tempFile);
     }
+
+
+    @Test
+    public void testMapper3() {
+        // Create Cartridge with Mapper 3 (CNROM)
+        // 16KB PRG, 32KB CHR (4 banks)
+        byte[] prg = new byte[16384];
+        byte[] chr = new byte[32768];
+        
+        // Fill CHR banks with distinct data
+        // Bank 0: 0x00
+        // Bank 1: 0x11
+        // Bank 2: 0x22
+        // Bank 3: 0x33
+        for (int i = 0; i < 8192; i++) chr[i] = 0x00;
+        for (int i = 0; i < 8192; i++) chr[8192 + i] = 0x11;
+        for (int i = 0; i < 8192; i++) chr[16384 + i] = 0x22;
+        for (int i = 0; i < 8192; i++) chr[24576 + i] = 0x33;
+        
+        Cartridge cart = new Cartridge(prg, chr, 3, 0, 1, 4);
+        
+        // Default Bank 0
+        assertEquals(0x00, cart.ppuRead(0x0000));
+        
+        // Switch to Bank 1
+        // Write to 0x8000 (val = 1)
+        cart.cpuWrite(0x8000, (byte) 0x01);
+        assertEquals(0x11, cart.ppuRead(0x0000), "Should switch to CHR Bank 1");
+        
+        // Switch to Bank 2
+        cart.cpuWrite(0x8000, (byte) 0x02);
+        assertEquals(0x22, cart.ppuRead(0x0000), "Should switch to CHR Bank 2");
+        
+        // Switch to Bank 3
+        cart.cpuWrite(0x8000, (byte) 0x03);
+        assertEquals(0x33, cart.ppuRead(0x0000), "Should switch to CHR Bank 3");
+    }
 }

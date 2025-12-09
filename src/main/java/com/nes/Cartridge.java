@@ -17,6 +17,7 @@ public class Cartridge {
     private int prgBanks;
     private int chrBanks;
     private int mirrorMode; // 0 = Horizontal, 1 = Vertical
+    private int chrBank = 0; // Current CHR Bank (Mapper 3)
 
     public Cartridge(String filePath) throws IOException {
         byte[] data = Files.readAllBytes(Paths.get(filePath));
@@ -110,6 +111,13 @@ public class Cartridge {
      * Write to PRG ROM (Mapper 0 doesn't support writing to ROM, but some mappers do registers)
      */
     public void cpuWrite(int addr, byte data) {
+        // Mapper 3 (CNROM)
+        if (mapperId == 3) {
+            // Write to 0x8000-0xFFFF sets CHR Bank
+            if (addr >= 0x8000 && addr <= 0xFFFF) {
+                chrBank = data & 0x03; // Select 8KB bank (0-3)
+            }
+        }
         // Mapper 0: No write support
     }
     
@@ -120,6 +128,17 @@ public class Cartridge {
      */
     public byte ppuRead(int addr) {
         addr &= 0x1FFF;
+        
+        if (mapperId == 3) {
+            // Mapper 3: Use chrBank
+            // 8KB banks. Offset = chrBank * 8192 + addr
+            int offset = chrBank * 8192 + addr;
+            if (offset < chrRom.length) {
+                return chrRom[offset];
+            }
+            return 0x00;
+        }
+        
         if (addr < chrRom.length) {
             return chrRom[addr];
         }
