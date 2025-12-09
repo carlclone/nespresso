@@ -660,7 +660,6 @@ public class Ppu {
             if (cycle == 256) incrementScrollY();
             if (cycle == 257) {
                 loadBackgroundShifters();
-                incrementScrollY();
                 if ((ppuMask & 0x18) != 0) {
                     vramAddr = (vramAddr & 0xFBE0) | (tempVramAddr & 0x041F);
                 }
