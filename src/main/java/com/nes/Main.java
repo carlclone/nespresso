@@ -47,7 +47,11 @@ public class Main {
             Thread emulationThread = new Thread(() -> {
                 System.out.println("Emulation thread started");
                 
+                final long TARGET_TIME = 1000000000 / 60; // 60 FPS in nanoseconds
+
                 while (window.isRunning()) {
+                    long startTime = System.nanoTime();
+                    
                     // Run one frame worth of cycles
                     // One frame = 262 scanlines * 341 cycles * 3 (CPU runs at 1/3 PPU speed)
                     // But we call bus.clock() which handles the 3:1 ratio
@@ -72,11 +76,26 @@ public class Main {
                             ppu.getFrame(), ppu.getPpuCtrl(), ppu.getPpuMask(), ppu.getPpuStatus()));
                     }
 
-                    // Sleep to maintain ~60 FPS
-                    try {
-                        Thread.sleep(16); // ~60 FPS
-                    } catch (InterruptedException e) {
-                        break;
+                    // Adaptive High-Precision Frame Timing
+                    long endTime = System.nanoTime();
+                    long duration = endTime - startTime;
+                    long waitTime = TARGET_TIME - duration;
+                    
+                    if (waitTime > 0) {
+                        try {
+                            // Sleep for most of the time (up to 1ms before target), to save CPU
+                            // Windows Thread.sleep is not precise, so we leave a buffer.
+                            if (waitTime > 1000000) {
+                                Thread.sleep((waitTime - 1000000) / 1000000);
+                            }
+                            
+                            // Busy-wait for the remaining time for high precision
+                            while (System.nanoTime() - startTime < TARGET_TIME) {
+                                // Spin
+                            }
+                        } catch (InterruptedException e) {
+                            break;
+                        }
                     }
                 }
                 

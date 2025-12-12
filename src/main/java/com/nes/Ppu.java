@@ -200,6 +200,9 @@ public class Ppu {
                 
                 // t: ...BA.. ........ = d: ......BA
                 tempVramAddr = (tempVramAddr & 0xF3FF) | ((data & 0x03) << 10);
+                
+                // Debug Log for F1 Race
+                // System.out.println("Write $2000: " + Integer.toHexString(data & 0xFF) + " at SL:" + scanline + " CYC:" + cycle);
                 break;
                 
             case 0x0001: // PPUMASK
@@ -226,12 +229,18 @@ public class Ppu {
                     tempVramAddr = (tempVramAddr & 0xFFE0) | ((data & 0xFF) >> 3);
                     fineX = (byte) (data & 0x07);
                     writeToggle = true;
+                    // Debug Log for F1 Race
+                    if (scanline > 0 && scanline < 240)
+                         System.out.println("Write $2005 (X) Val=" + (data & 0xFF) + " FineX=" + fineX + " at SL:" + scanline + " CYC:" + cycle);
                 } else {
                     // Second write: Y scroll
                     // t: CBA..HG FED..... = d: HGFEDCBA
                     tempVramAddr = (tempVramAddr & 0x8FFF) | ((data & 0x07) << 12);
                     tempVramAddr = (tempVramAddr & 0xFC1F) | ((data & 0xF8) << 2);
                     writeToggle = false;
+                    // Debug Log for F1 Race
+                    if (scanline > 0 && scanline < 240)
+                         System.out.println("Write $2005 (Y) Val=" + (data & 0xFF) + " at SL:" + scanline + " CYC:" + cycle);
                 }
                 break;
                 
@@ -242,6 +251,8 @@ public class Ppu {
                     // t: X...... ........ = 0
                     tempVramAddr = (tempVramAddr & 0x80FF) | ((data & 0x3F) << 8);
                     writeToggle = true;
+                     if (scanline > 0 && scanline < 240)
+                         System.out.println("Write $2006 (Hi) Val=" + (data & 0xFF) + " at SL:" + scanline + " CYC:" + cycle);
                 } else {
                     // Second write: Low byte
                     // t: ....... HGFEDCBA = d: HGFEDCBA
@@ -249,6 +260,8 @@ public class Ppu {
                     tempVramAddr = (tempVramAddr & 0xFF00) | (data & 0xFF);
                     vramAddr = tempVramAddr;
                     writeToggle = false;
+                     if (scanline > 0 && scanline < 240)
+                         System.out.println("Write $2006 (Lo) Val=" + (data & 0xFF) + " vramAddr=" + Integer.toHexString(vramAddr) + " at SL:" + scanline + " CYC:" + cycle);
                 }
                 break;
                 

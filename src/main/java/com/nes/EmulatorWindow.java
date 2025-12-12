@@ -18,8 +18,7 @@ public class EmulatorWindow extends JFrame {
     
     private Bus bus;
     private BufferedImage frameImage;
-    private DisplayPanel displayPanel;
-    private Timer renderTimer;
+    private Canvas displayCanvas;
     private boolean running = false;
     
     public EmulatorWindow(Bus bus) {
@@ -32,10 +31,11 @@ public class EmulatorWindow extends JFrame {
         // Create buffered image for frame buffer
         frameImage = new BufferedImage(NES_WIDTH, NES_HEIGHT, BufferedImage.TYPE_INT_RGB);
         
-        // Create display panel
-        displayPanel = new DisplayPanel();
-        displayPanel.setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
-        add(displayPanel);
+        // Create display canvas
+        displayCanvas = new Canvas();
+        displayCanvas.setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
+        displayCanvas.setFocusable(false); // Window handles focus
+        add(displayCanvas);
         
         pack();
         setLocationRelativeTo(null); // Center on screen
@@ -96,6 +96,8 @@ public class EmulatorWindow extends JFrame {
     public void start() {
         running = true;
         setVisible(true);
+        // Create triple buffer strategy for better VSync
+        displayCanvas.createBufferStrategy(3);
     }
     
     /**
@@ -115,32 +117,42 @@ public class EmulatorWindow extends JFrame {
         // Get frame buffer from PPU
         int[] frameBuffer = bus.getFrameBuffer();
         
-        // Copy to buffered image
-        frameImage.setRGB(0, 0, NES_WIDTH, NES_HEIGHT, frameBuffer, 0, NES_WIDTH);
+        // Synchronize image update
+        synchronized (frameImage) {
+            frameImage.setRGB(0, 0, NES_WIDTH, NES_HEIGHT, frameBuffer, 0, NES_WIDTH);
+        }
         
-        // Repaint display
-        displayPanel.repaint();
+        // Render using BufferStrategy
+        java.awt.image.BufferStrategy bs = displayCanvas.getBufferStrategy();
+        if (bs == null) return;
+        
+        Graphics g = bs.getDrawGraphics();
+        Graphics2D g2d = (Graphics2D) g;
+        
+        // Settings
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
+                            RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                            
+        // Clear background (optional since we draw over everything)
+        // g.setColor(Color.BLACK);
+        // g.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        
+        // Draw Image
+        synchronized (frameImage) {
+            g2d.drawImage(frameImage, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, null);
+        }
+        
+        g.dispose();
+        bs.show();
+        
+        // Toolkit.sync() is not needed with BufferStrategy and can cause stutter
+        // Toolkit.getDefaultToolkit().sync();
     }
     
     /**
      * Custom panel for rendering the NES display
      */
-    private class DisplayPanel extends JPanel {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            
-            // Draw scaled frame buffer
-            Graphics2D g2d = (Graphics2D) g;
-            
-            // Use nearest neighbor for crisp pixels
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
-                                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-            
-            // Draw image scaled to window size
-            g2d.drawImage(frameImage, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, null);
-        }
-    }
+    // DisplayPanel class removed
     
     public boolean isRunning() {
         return running;
