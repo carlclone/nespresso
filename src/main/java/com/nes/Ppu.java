@@ -196,6 +196,15 @@ public class Ppu {
                 ppuCtrl = data;
                 
                 // Update NMI output
+                if (nmiOutput != ((data & 0x80) != 0)) {
+                    // Late NMI Enable fix:
+                    // If NMI was just enabled and we are in VBlank, trigger NMI immediately
+                    if (!nmiOutput && ((data & 0x80) != 0) && ((ppuStatus & 0x80) != 0)) {
+                        if (bus != null) {
+                            bus.nmi();
+                        }
+                    }
+                }
                 nmiOutput = (ppuCtrl & 0x80) != 0;
                 
                 // t: ...BA.. ........ = d: ......BA
@@ -707,7 +716,9 @@ public class Ppu {
         
         if (scanline == 241 && cycle == 1) {
             ppuStatus |= 0x80;
-            if (nmiOutput && bus != null) bus.nmi();
+            if (nmiOutput && bus != null) {
+                bus.nmi();
+            }
         }
         
         if (scanline == 261 && cycle == 1) {

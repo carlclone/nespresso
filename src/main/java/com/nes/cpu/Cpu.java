@@ -14,6 +14,8 @@ public class Cpu {
     public byte sp = (byte) 0xFD; // Stack Pointer
     public int pc = 0x0000;    // Program Counter
     public byte status = 0x00; // Status Register
+    
+    private boolean nmiPending = false;
 
     // Status Flags
     public static final byte C = (byte) (1 << 0); // Carry Bit
@@ -55,6 +57,14 @@ public class Cpu {
      * Triggered by PPU at VBlank
      */
     public void nmi() {
+        nmiPending = true;
+    }
+
+    /**
+     * Internal NMI execution logic
+     */
+    private void executeNmi() {
+        nmiPending = false;
         // Push PC to stack
         pushWord(pc);
         
@@ -908,6 +918,12 @@ public class Cpu {
 
     public void clock() {
         if (cycles == 0) {
+            // Check for pending NMI
+            if (nmiPending) {
+                executeNmi();
+                return;
+            }
+
             opcode = bus.read(pc) & 0xFF; // Read opcode
             pc++;
 
